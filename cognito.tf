@@ -39,40 +39,24 @@ resource "aws_cognito_identity_pool" "id_pool" {
 
 
 ## IAM for Cognito
-/*
-data "aws_iam_policy_document" "s3_iam_cognito_policy_template" {
-  statement {
-    sid = "ListYourObjects"
-    effect = "Allow"
-    actions = [
-      "s3:ListBUcket",
-    ]
-    resources = [
-      "arn:aws:s3:::${aws_s3_bucket.bucket.bucket}",
-    ]
-    condition {
-      test = "StringLike"
-      variable = "s3:prefix"
 
-      values = [
-        "cognito/${aws_cognito_identity_pool.id_pool.identity_pool_name}/&{cognito-identity.amazonaws.com:sub}",
-      ]
-    }
+
+resource "aws_iam_role" "authenticated" {
+  name = var.cognito_authenticated_iam_role_name  
+  assume_role_policy = data.aws_iam_policy_document.cognito_authenticated_iam_role_template.json
+
+  tags = {
+    Project = var.project_tag
+    Name        = var.cognito_authenticated_iam_role_name
+    Environment = var.env
   }
-  statement {
-    sid = "ReadWriteDeleteYourObjects"
-    effect = "Allow"
-    actions = [
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:DeleteObject",
-    ]
-    resources = [
-      "arn:aws:s3:::${aws_s3_bucket.bucket.bucket}/cognito/${aws_cognito_identity_pool.id_pool.identity_pool_name}/&{cognito-identity.amazonaws.com:sub}",
-      "arn:aws:s3:::${aws_s3_bucket.bucket.bucket}/cognito/${aws_cognito_identity_pool.id_pool.identity_pool_name}/&{cognito-identity.amazonaws.com:sub}/*",
-    ]
-
-  }
-
 }
-*/
+
+resource "aws_cognito_identity_pool_roles_attachment" "main" {
+  identity_pool_id = aws_cognito_identity_pool.id_pool.id
+  roles = {
+    "authenticated" = aws_iam_role.authenticated.arn
+  }
+}
+
+#role_mapping {}https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cognito_identity_pool_roles_attachment#role_mapping
